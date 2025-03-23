@@ -1,0 +1,94 @@
+% !TeX spellcheck = ru_RU
+\documentclass[a4paper,14pt]{extarticle}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{listings}
+
+\usepackage{xcolor}
+
+\usepackage{indentfirst}
+\usepackage[left = 20mm, right = 10mm, top = 20mm, bottom = 20mm]{geometry}
+\usepackage[indent=1.25cm]{parskip}
+\renewcommand{\baselinestretch}{1.5}
+
+\newtheorem{theorem}{Теорема}
+
+\lstset{label=Листинг, tabsize = 2, basicstyle=\ttfamily, captionpos=b, escapeinside={№}{/№}}
+
+\author{Борисенков Никита}
+
+
+
+\begin{document}
+
+\begin{titlepage}
+    \newpage
+    \begin{center}
+        Московский государственный университет имени M.В. Ломоносова
+        Механико-математический факультет\\
+        Кафедра вычислительной математики \\
+    \end{center}
+
+    \vspace{8em}
+
+    \begin{center}
+        \Large Курсовая работа \\
+    \end{center}
+
+    \vspace{2em}
+
+    \begin{center}
+        \textsc{\textbf{}}
+    \end{center}
+
+    \vspace{20em}
+
+
+
+    \newbox{\lbox}
+    \newlength{\maxl}
+    \setlength{\maxl}{\wd\lbox}
+    \hfill\parbox{13cm}{
+        \hspace*{5cm}\hspace*{-5cm}Студент: \qquad\qquad\hbox to \maxl{Борисенков Никита Николаевич\hfill}\\
+        \hspace*{5cm}\hspace*{-5cm}Преподаватель: \hbox to \maxl{ С.н.с Кривчиков Максим Александрович}\\
+        \\
+        \hspace*{5cm}\hspace*{-5cm}Группа:\qquad\qquad $\;\:$ \hbox to\maxl{410}\\
+    }
+
+
+    \vspace{\fill}
+
+    \begin{center}
+        Москва \\2025
+    \end{center}
+
+\end{titlepage}
+\newpage
+
+\section*{Введение}
+
+\section{Результаты известных исследований}
+
+Задача выделения регистров является важной частью процесса компиляции программ. Самым известным способом решения этой задачи пожалуй является сведение её к раскраске графа пересечения времён жизни переменных. Эта идея была предложена в 1981 году в \cite{chaitin_register_1981}. Для произвольных графов задача раскраски является NP-сложной и в этой же статье показано, что для любого графа можно написать программу, задача выделения регистров которой будет сводиться к раскраске этого графа.
+
+В статье \cite{hans_l_bodlaender_linear-time_1997} показано, что если число регистров фиксировано и не производится вынос переменных на стек, то для <<структурированных>> программ существует линейный по количеству вершин и рёбер в графе алгоритм выделения регистров. Структурированность в данной статье означает отсутствие \texttt{goto}-переходов. Из структурированности следует ограниченная древесная ширина графов, а для таких графов существует линейный алгоритм определения возможности и нахождения раскраски. Коэффициент в линейной зависимости получается более, чем линейно зависящим {\color(red) это нормальная фраза?} от числа регистров.
+
+Другой известный способ выделения регистров -- это линейный скан {\color{red} (это правильный перевод?)}, предложенный в статье \cite{poletto_linear_1999}. Этот алгоритм не использует графовое представление пересечений интервалов жизни переменный, а работает с ними на прямую. Сложность этого алгоритма линейна по количеству переменных, что является значительным плюсом по сравнению с раскраской графа, и позволяет его использовать в случаях, когда время компиляции важно (например, JIT-компиляция). Минусом этого алгоритма является худшее качество кода, по сравнению с раскраской графа.
+
+\section{Постановка задачи}
+
+\section{Решение}
+
+\section{Заключение}
+
+\newpage
+
+\bibliographystyle{ugost2008}
+\bibliography{fclang_register_allocation}
+
+
+\end{document}
