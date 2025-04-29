@@ -163,16 +163,16 @@
 
 Внутри каждого блока находятся объявления переменных и инструкции.
 Так же там могут находиться выражения на языке Python, который выступает в качестве макроязыка.
-%В листинге \ref{syntax} представлен примерный синтаксис программы без конкретного описания всех выражений.
-%
-%\begin{lstlisting}[caption=Синтаксис программы на FCLang, label=syntax]
-%<program>           №$\rightarrow$/№ <block declaration>№$^{*}$/№ <block>№$^{*}$/№
-%<block>             №$\rightarrow$/№ <block start> <block part>№$^{*}$/№ <block exit>
-%<block start>       №$\rightarrow$/№ <block begin> <variable as input>№$^{*}$/№
-%<block exit>        №$\rightarrow$/№ pass_control <block name and variables to pass>
-%<block part>        №$\rightarrow$/№ <variable definition> | <instruction> | <conditional exit>
-%<conditional exit>  №$\rightarrow$/№ condition_pass <condition> <block name and variables to pass>
-%\end{lstlisting}
+В листинге \ref{syntax} представлен примерный синтаксис программы без конкретного описания всех выражений.
+
+\begin{lstlisting}[caption=Синтаксис программы на FCLang, label=syntax]
+<program>           №$\rightarrow$/№ <block declaration>№$^{*}$/№ <block>№$^{*}$/№
+<block>             №$\rightarrow$/№ <block start> <block part>№$^{*}$/№ <block exit>
+<block start>       №$\rightarrow$/№ <block begin> <variable as input>№$^{*}$/№
+<block exit>        №$\rightarrow$/№ pass_control <block name and variables to pass>
+<block part>        №$\rightarrow$/№ <variable definition> | <instruction> | <conditional exit>
+<conditional exit>  №$\rightarrow$/№ condition_pass <condition> <block name and variables to pass>
+\end{lstlisting}
 
 Инструкции соответствуют командам ассемблера.
 Для каких-то стандартных операций, например для системных вызовов, могут быть сделаны макроинструкции, которые создадут нужный набор инструкций сами.
@@ -249,6 +249,7 @@
 Проверка на равенство 0 же проще.
 Она эквивалентна нахождению совершенного паросочетания в двудольном графе.
 Для решения этой задачи есть полиномиальные алгоритмы, например тот, который предложен в \cite{chandran_practical_2011}.
+Этот алгоритм реализован не был.
 
 \begin{lstlisting}[caption={Пример кода, в котором алгоритм может не справится}, label=fail_when_possible]
 op(v1)
@@ -261,6 +262,12 @@ op(v2)
 а R1 уже используется v2.
 Допустимое выделение конечно же есть: v1 $\rightarrow$ R2, v2 $\rightarrow$ R1/№
 \end{lstlisting}
+
+\subsection{Реализация}
+Реализация была написана на языке Python.
+Блоки реализованы как блоки кода обёрнутые в \texttt{with} выражение.
+Инструкции реализованы как классы, представители которых имеют в себе список операндов,
+а сам класс содержит в себе название инструкции в языке ассемблера NASM, число операндов и список действий над ними.
 
 \section{Заключение}
 
