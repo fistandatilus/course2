@@ -158,6 +158,12 @@
 В настоящей работе основной задачей является написание системы выделения регистров для макета компилятора языка FCLang.
 Для проверки работоспособности полученного алгоритма нужно было создать макет языка FCLang.
 
+Формально задачу выделения регистров можно сформулировать так: даны конечное множество переменных $V$,
+конечное множество регистров $R$ и программа $P = \{ c_i \subset V \sqcup R \}$.
+Определено отображение $live : V \rightarrow 2^P$ такое, что $v \in c \Rightarrow c \in live(v)$.
+Требуется построить отображение $reg : V \rightarrow R$ такое, что $\forall v, u \in V, v \neq u, live(v) \cap live(u) \neq \emptyset \Rightarrow reg(v) \neq reg(u)$
+и $\forall v \in V, r \in R \left(\exists c \in live(v), r \in c \Rightarrow reg(v) \neq r \right)$, если это возможно, а иначе сообщить о невозможности.
+
 Программа на языке FCLang состоит из базовых блоков, которые содержат в себе линейные участки кода.
 У каждого блока есть одна точка входа -- его начало.
 В начале указываются переменные, которые используются как входные значения.
@@ -170,11 +176,16 @@
 
 \begin{lstlisting}[caption=Синтаксис программы на FCLang, label=syntax]
 <program>           №$\rightarrow$/№ <block declaration>№$^{*}$/№ <block>№$^{*}$/№
-<block>             №$\rightarrow$/№ <block start> <block part>№$^{*}$/№ <block exit>
+<block>             №$\rightarrow$/№ <block start> <block part>№$^{*}$/№
+                                         <block exit>
 <block start>       №$\rightarrow$/№ <block begin> <variable as input>№$^{*}$/№
-<block exit>        №$\rightarrow$/№ pass_control <block name and variables to pass>
-<block part>        №$\rightarrow$/№ <variable definition> | <instruction> | <conditional exit>
-<conditional exit>  №$\rightarrow$/№ condition_pass <condition> <block name and variables to pass>
+<block exit>        №$\rightarrow$/№ pass_control
+                      <block name and variables to pass>
+<block part>        №$\rightarrow$/№ <variable definition> 
+                       | <instruction>
+                       | <conditional exit>
+<conditional exit>  №$\rightarrow$/№ condition_pass <condition>
+                      <block name and variables to pass>
 \end{lstlisting}
 
 Инструкции соответствуют командам ассемблера.
@@ -252,9 +263,20 @@ def write(descriptor: Value, buffer: Value, length: Value):
 Для построения этого списка используется дополнительный проход по блоку.
 
 Обычный алгоритм линейного сканирования не справится только если в какой-то момент количество живых переменных больше числа регистров.
-Из-за дополнительных ограничений на допустимые регистры предложеный выше алгоритм может не справиться когда свободные регистры есть.
+Из-за дополнительных ограничений на допустимые регистры предложенный выше алгоритм может не справиться когда свободные регистры есть.
 Более того, не справится он может тогда, когда допустимое выделение регистров есть.
-Пример такого процесса представлен в листинге \ref{fail_when_possible}
+Пример такого процесса представлен в листинге \ref{fail_when_possible}.
+В этом примере рассматривается ситуация, когда есть только два регистра \texttt{R1} и \texttt{R2}, и алгоритм сначала присвоил переменной \texttt{v1} регистр \texttt{R1}.
+В таком случае он не сможет сопоставить \texttt{v2} регистр, потому что во её интервале жизни регистр \texttt{R2} используется, а регистр \texttt{R1} уже занят.
+Допустимое выделение конечно же есть: $reg(\texttt{v1}) = \texttt{R2}, reg(\texttt{v2}) = \texttt{R1}$
+
+\begin{lstlisting}[caption={Пример кода, в котором алгоритм может не справится}, label=fail_when_possible]
+op(v1)
+op(v2)
+op(v1)
+op(R2)
+op(v2)
+\end{lstlisting}
 
 Один из вариантов (частичного) исправления этой проблемы -- это в момент, когда алгоритм не справляется таким образом,
 определить, как можно переставить регистры в живых переменных так, чтобы всем достался допустимый регистр.
@@ -270,18 +292,6 @@ def write(descriptor: Value, buffer: Value, length: Value):
 Она эквивалентна нахождению совершенного паросочетания в двудольном графе.
 Для решения этой задачи есть полиномиальные алгоритмы, например тот, который предложен в \cite{chandran_practical_2011}.
 Этот алгоритм реализован не был.
-
-\begin{lstlisting}[caption={Пример кода, в котором алгоритм может не справится}, label=fail_when_possible]
-op(v1)
-op(v2)
-op(v1)
-op(R2)
-op(v2)
-№Если есть только два регистра R1 и R2, и алгоритм сначала присвоит переменной v1 регистр R1,
-то он не сможет сопоставить v2 регистр, потому что во время её интервала жизни используется регистр R2 используется,
-а R1 уже используется v2.
-Допустимое выделение конечно же есть: v1 $\rightarrow$ R2, v2 $\rightarrow$ R1/№
-\end{lstlisting}
 
 \subsection{Реализация}
 Реализация была написана на языке Python.
