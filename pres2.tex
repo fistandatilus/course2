@@ -1,0 +1,198 @@
+
+\documentclass[10pt,a4paper]{beamer}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\lstset{tabsize = 2, basicstyle=\ttfamily, escapeinside={№}{/№}}
+
+\author{Борисенков Никита, 310 группа}
+\title{Создание парсера подмножества языка Scheme на языке Coq}
+\date{}
+
+\begin{document}
+\maketitle
+
+%\begin{frame}
+%\frametitle{Frame template}
+%
+%\end{frame}
+
+\begin{frame}
+\frametitle{Актуальность}
+
+Парсер -- это программа/функция, которая, получая на вход строку символов, будет возвращать либо ошибку, если эта строка не соответствует грамматике, либо синтаксическое дерево, соответствующее этой строке.
+
+Парсеры нужны для компиляции, чтения текстовых данных, разбора сообщений в протоколах.
+
+Ошибки в парсерах могут приводить к критическим уязвимостям
+
+Примеры уязвимостей:
+https://nvd.nist.gov/vuln/detail/CVE-2024-34489
+https://nvd.nist.gov/vuln/detail/CVE-2023-28428
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Актуальность}
+
+\cite{barthwal_verified_2009} -- верифицированный генератор SLR парсеров.
+
+\cite{hutchison_validating_2012} -- валидатор сгенерированных LR(1) парсеров.
+
+\cite{edelmann_ll1_2020} -- верифицированный LL(1) парсер, основанный на идее производных грамматик и оптимизированный структурой данных zipper.
+
+\cite{blaudeau_verified_2020} -- верифицированный итерпретатор грамматик PEG.
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Формулировка задачи}
+
+Реализовать на языке Coq парсер подмножества языка Scheme, возвращающий синтаксическое дерево в случае успеха.
+
+Доказать, используя инструменты языка Coq, что для любых входных данных функция завершает свою работу.
+
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Используемое подмножество Scheme}
+
+\begin{lstlisting}
+<list>       №$\rightarrow$/№ (<datum>№$^{*}$/№)
+<datum>      №$\rightarrow$/№ <number> | <string>
+               | <symbol> | <list>
+<number>     №$\rightarrow$/№ <sign><digit>№$^{+}$/№
+<string>     №$\rightarrow$/№ "<string character>№$^{*}$/№"
+<symbol>     №$\rightarrow$/№ <initial> <subsequent>№$^{*}$/№
+               | + | - | ...
+<initial>    №$\rightarrow$/№ <letter> | ! | $ | % | & | * | /
+               | : | < | = | > | ? | ~ | _ | ^
+<subsequent> №$\rightarrow$/№ <initial> | <digit> | . | + | -
+<letter>     №$\rightarrow$/№ a | b | ... | z
+<digit>      №$\rightarrow$/№ 0 | 1 | ... | 9
+<sign>       №$\rightarrow$/№ <empty> | + | -
+<string character> №$\rightarrow$/№ \\ | \" | \n | \t
+                     | <not " or \ character>
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Описание parse}
+
+\begin{tabular}{ll}
+
+\texttt{parse : string -> Result} & Тип функции parse \\
+\\
+\texttt{Inductive Result: Set :=}  & Описание типа Result \\
+\texttt{|ok: list Tree -> Result}  & Конструктор для успеха \\
+\texttt{|error: string -> Result.} & Конструктор для ошибки \\
+
+\end{tabular}
+
+%\textcolor{cyan}{Что я тут скажу: Функция parse -- это основная функция, которая собственно и является парсером. Она переводит строку в объект типа результат, который вот так описан. Результат может быть либо списком синтаксических деревьев, построенных по этой строке в случае успеха, либо строкой с сообщением об ошибке в случае неудачи}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Описание синтаксических деревьев}
+
+\begin{tabular}{ll}
+
+\texttt{Inductive Tree : Set :=} &\\
+\texttt{| empty : Tree}                  & Пустой лист \\
+\texttt{| numbernode : Z -> Tree}        & Лист с числом \\
+\texttt{| stringnode : string -> Tree}   & Лист со строкой \\
+\texttt{| identifier : string -> Tree}   & Лист с идентификатором \\
+\texttt{| listnode : list Tree -> Tree.} & Вершина со списком потомков
+
+\end{tabular}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Тело parse}
+
+Случаи символов
+\begin{itemize}
+\item ( -- начался список, вызывается сама функция parse
+\item \texttt{"} -- началась строка
+\item цифра -- началось число
+\item + или - -- может быть как число, так и идентификатор + или -. Сначала пытается распознать число
+\item остальные символы -- начался идентификатор
+
+\begin{lstlisting}
+match s with
+|EmptyString => ok nil
+|String " " s' => parse s'
+|String "(" s' => ...
+...
+\end{lstlisting}
+
+%\textcolor{cyan}{Что я тут скажу: Само тело parse представляет собой одно выражение match, которое само по себе используется для разбора вариантов первого символа в разбираемой строке. На вынесенном куске видно, что в случае пустой строки возвращается пустой список. nil его обозначает. Пробел просто пропускается, как и остальные пробельные символы, а по остальным символам разбор более сложный.}
+
+\end{itemize}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Завершимость}
+
+Про данный парсер доказано, что он на любой входной строке завершается.
+
+Для доказательства используется библиотека Program. При задании функции она создаёт требования, которые нужно доказать, чтобы завершить определение функции.
+
+\begin{lstlisting}
+Program Fixpoint parse (s : string)
+                 {measure (slen s)}: Result
+\end{lstlisting}
+%\textcolor{cyan}{Это начало объявления parse. Program здесь обозначает, что для её обределения нужно использовать эту библиотеку, а в фигурных скобках подсказка для системы, что Завершимость следует из уменьшения длины входной строки.}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Возникшие сложности}
+
+В Coq есть извлечение кода в обычные языки программирования -- в Haskell и OCaml, но оно не справляется с нативным извлечением строк в функциях, где на строках используется match.
+
+Разбор строк без предварительного использования лексера скорее всего вызвало затруднения с извлечением, а так же сильно увеличила количество требований, созданных Program.
+
+\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+(forall s'0 : string, String """" s'0 <>
+           String (Ascii true true true true H3 H4 H5 H6) s') /\
+(forall s'0 : string, String "-" s'0 <>
+           String (Ascii true true true true H3 H4 H5 H6) s') /\
+(forall s'0 : string, String "+" s'0 <>
+           String (Ascii true true true true H3 H4 H5 H6) s') /\
+...
+
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}
+\frametitle{Возможное развитие}
+
+Чтобы этот парсер можно было применять на практике его код надо извлечь. Coq предоставляет возможность пользователю задавать правила извлечения и можно попытаться при помощи этих правил задать нормальное извлечение строк.
+
+Про этот парсер доказана только завершимость. Можно доказывать факты про него, связанные именно с процессом разбора строк.
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Заключение}
+
+В этой работе был написан парсер подмножества языка Scheme и доказана его завершимость. Большинство языков программирования не гарантирует завершимость написанных на них программ и если в случае простых программ проверить, что она не уйдёт в бесконечный цикл можно самостоятельно, то когда программа становится сложной, случаи зависания могут быть незаметны и ускользнуть от внимания разработчика, чему могут служить примеры уязвимостей, приведённые ранее.
+
+\end{frame}
+\bibliographystyle{apalike}
+\bibliography{verified_parser_articles}
+\end{document}
