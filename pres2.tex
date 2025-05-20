@@ -1,4 +1,3 @@
-
 \documentclass[10pt,a4paper]{beamer}
 \usepackage[T2A]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -8,120 +7,254 @@
 \usepackage{amssymb}
 \usepackage{xcolor}
 \usepackage{listings}
+\usepackage[skip=10pt plus1pt]{parskip}
 
-\lstset{tabsize = 2, basicstyle=\ttfamily, escapeinside={№}{/№}}
+\lstset{tabsize = 2, escapeinside={№}{/№}}
 
-\date{}
+\title{Создание системы выделения регистров для языка FCLang}
+\author{Студент: Борисенков Никита Николаевич, 410 группа\\
+Научный руководитель: c.н.с Кривчиков Максим Александрович}
+\date{2025}
 
 \begin{document}
 \maketitle
 
 \begin{frame}
-\frametitle{Frame template}
+    \frametitle{Frame template}
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Введение}
+    \frametitle{Введение}
 
-То, что есть такой предложенный язык.
-То, что я делаю систему выделения регистров.
-То, что я делал макет, потому что до меня ничего не было написано.
+    FCLang -- язык между ассемблером и C \cite{____2023}.
 
-\end{frame}
+    В нём есть переменные, а значит под них нужно выделять регистры.
 
-\begin{frame}
-\frametitle{Актуальность}
-чут-чут со ссылкой, зачем нужен язык
-дальше то, что в нём есть переменные и без выделения регистров не сделать переменные никак.
+    Чтобы можно было проверить работоспособность алгоритма, так же сделан макет языка.
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Известные исследования}
-Сначала то, что очевидно, что эта задача так или иначе решалась
-\end{frame}
+    \frametitle{Введение}
 
-\begin{frame}
-\frametitle{Известные исследования. Раскраски графов}
-Про то что это самое раннее, что я нашёл.
-Основной принцип.
-NP-сложность.
-\end{frame}
+    Предполагается для ручной оптимизации <<горячих>> участков кода.
 
-\begin{frame}
-\frametitle{Известные исследования. Раскраски графов}
-Более простые алгоритмы для ограниченных множеств графов.
-Хордальные графы.
-Графы ограниченной древесной ширины.
-Какие ограничения на код при этом?
-Факт о том, что в произвольной программе с goto возможен любой граф.
-\end{frame}
+    Должен иметь в себе систему типов.
 
-\begin{frame}
-\frametitle{Известные исследования. Линейные сканирования}
-Замечание про оптимальность
-Про ELS и почему не подходит.
-\end{frame}
+    В качестве метаязыка/препроцессора используется язык Python.
 
-\begin{frame}
-\frametitle{Известные исследования. LLVM}
+    Есть переменные, которые ведут себя как именованные регистры.
+
+    Хочется простую (небольшую по количеству кода) реализацию, чтобы было просто поддерживать.
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Постановка задачи}
-Нужно написать алгоритм выделения регистров с учётом особенностей FCLang.
-Нужно написать макет языка FCLang, чтобы было над чем работать.
+    \frametitle{Известные исследования. Раскраски графов}
+    Раскраска графов предложена в \cite{chaitin_register_1981}.
 
-Можно сюда вставить формальную задачу о выделении регистров.
-\end{frame}
+    Переменным сопоставляются вершины. Рёбра есть, если пересекаются времена жизни.
+    Цвета в раскраске соответствуют регистрам.
 
-\begin{frame}
-\frametitle{Выбранный алгоритм}
+    Оптимальна в том смысле, что если выделение есть, то алгоритм его даст.
 
-Это линейное сканирование.
-К нему прикручены условия, накладываемые явным использованием регистров.
-Что я вообще видел про эти условия.
+    NP-сложная задача.
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Описание работы условий}
+    \frametitle{Известные исследования. Раскраски графов}
+    Если ограничивать класс графов, то есть более быстрые алгоритимы раскраски:
+
+    Хордальные графы.
+    В \cite{hutchison_register_2005} говорится, что большинство программ имеют такие.
+    Есть алгоритм раскраски, линейный на хордальных графах.
 \end{frame}
 
 \begin{frame}
-\frametitle{Описание работы условий}
-проблемы с дополнительным несрабатыванием.
-история с перманентом и ещё одним алгоритмом на графах.
-картинки к ним
+    \frametitle{Известные исследования. Раскраски графов}
+    \textbf{Структурированные} программы имеют графы ограниченной древесной ширины.
+
+    При фиксированном числе регистров есть линейный алгоритм раскраски графов \cite{hans_l_bodlaender_linear-time_1997}.
+
+    Коэффициент линейной зависимости экспоненциально зависит от числа регистров. Если есть регистры разных видов, то сложность не может быть линейной. Есть полиномиальный алгоритм с показателем, зависящим от числа регистров.
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Известные исследования. Линейные сканирования}
+    Линейное сканирование(linear scan) предложено в \cite{poletto_linear_1999}
+    \begin{lstlisting}[language=python]
+    def LinearScanRegisterAllocation():
+        active = []
+        for i in live_intervals: #№по возрастанию начала/№
+            ExpireOldIntervals(i)
+            if length(active) == R:
+                SpillAtInterval(i)
+            else
+                i.register = free_registers.pop()
+                active.insert(i) #№по убыванию конца/№
+    def ExpireOldIntervals(i):
+        for j in active: #№по возрастанию конца/№
+            if j.endpoint >= i.startpoint:
+                return
+            active.remove(j) 
+            free_registers.append(j.register)
+    \end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Известные исследования. Линейные сканирования}
+    \begin{lstlisting}[language=python]
+    def SpillAtInterval(i):
+        spill = active[-1]
+        if spill.endpoint > i.endpoint:
+            i.register =  spill.register]
+            spill.location = new stack location
+            active.remoce(spill)
+            active.insert(i) #№по возрастанию конца/№
+        else
+            i.location = new stack locationk
+    \end{lstlisting}
+
 \end{frame}
 
 \begin{frame}
-\frametitle{Макет яыка. Описание}
+    \frametitle{Известные исследования. Линейные сканирования}
+    Развитие линейного сканирования -- Extended linear scan \cite{krishnamurthi_extended_2007}.
+
+    Допускает вставление mov инструкций.
+
+    Может давать результаты лучше раскраски графов.
 \end{frame}
 
 \begin{frame}
-\frametitle{Макет языка. Пример}
-Возможно стоит ещё и сравнение с си, но боюсь не успею.
-там нужно память сделать
+    \frametitle{Известные исследования. LLVM}
+    Использует свой итеративный жадный алгоритм (greedy allocator)
+
+    Основан на разрезании времени жизни и эвристиках по поводу того, какие переменные нужно держать на регистрах.
+
 \end{frame}
 
 \begin{frame}
-\frametitle{Как это можно развить}
-Добавить SMID регистры.
-Нынешняя реализация не позволят использовать части регистра.
-С векторными регистрами это необходимо.
+    \frametitle{Постановка задачи}
+    Нужно написать алгоритм выделения регистров с учётом особенностей FCLang.
 
-Можно строго формулировать требоваия к языку.
-Можно реализовывать больше его частей.
+    Особенности: нет автоматического выноса переменных в память, есть явные использования регистров.
+
+    Нужно написать макет языка FCLang.
+
+    Формально задачу выделения регистров можно сформулировать так: даны конечное множество переменных $V$,
+    конечное множество регистров $R$ и программа $P = \{ c_i \subset V \sqcup R \}$.
+    Определено отображение $live : V \rightarrow 2^P$ такое, что $v \in c \Rightarrow c \in live(v)$.
+    Требуется построить отображение $reg : V \rightarrow R$ такое, что $\forall v, u \in V, v \neq u, live(v) \cap live(u) \neq \emptyset \Rightarrow reg(v) \neq reg(u)$
+    и $\forall v \in V, r \in R \left(\exists c \in live(v), r \in c \Rightarrow reg(v) \neq r \right)$, если это возможно, а иначе сообщить о невозможности.
 \end{frame}
 
 \begin{frame}
-\frametitle{Заключение}
-В этой работе был реализован алгоритм выделения регистров.
-Был создан макет языка, который показывает работоспособность этого алгоритма и языка.
+    \frametitle{Выбранный алгоритм}
+
+    За основу взято линейное сканирование.
+
+    Причины выбора:
+    \begin{itemize}
+        \item линейная сложность без большого коэффициента
+        \item не требуется большого количества памяти
+        \item простота реализации
+        \item программы могут быть произвольными, поэтому алгоритмы опирающиеся на хордальность или ограниченную древесную ширину не подходят.
+    \end{itemize}
+
+    К нему дополнительно добавлена проверка на то, а можно ли выделить регистр переменной.
+
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Проблема}
+
+    Выбранный алгоритм не всегда даёт результат когда это возможно
+    \includegraphics[scale=0.4]{fail_when_possible.png}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Проблема}
+    \begin{figure}[h]
+        \begin{minipage}[h]{0.47\linewidth}
+            \begin{tabular}{*{6}{|c}|}
+                \hline
+                & r1 & r2 & r3 & r4 & r5\\
+                \hline
+                v1 & x& & x& & \\
+                \hline
+                v2 & x& x& x& & \\
+                \hline
+                v3 & & & & x&x \\
+                \hline
+                v4 & &x & & x&x \\
+                \hline
+                v5 & x& x&x & & \\
+                \hline
+            \end{tabular}
+        \end{minipage}
+        \begin{minipage}[h]{0.47\linewidth}
+            $\text{perm}\left(
+            \begin{array}{*{5}{c}}
+                0&1&0&1&1\\
+                0&0&0&1&1\\
+                1&1&1&0&0\\
+                1&0&1&0&0\\
+                0&0&0&1&1\\
+            \end{array}\right) \overset{?}{=} 0$
+        \end{minipage}
+
+    \end{figure}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Макет языка. Описание}
+\begin{lstlisting}
+<program>       №$\rightarrow$/№ <block declaration>№$^{*}$/№ <block>№$^{*}$/№
+<block>         №$\rightarrow$/№ <block start> <block part>№$^{*}$/№
+                                     <block exit>
+<block start>   №$\rightarrow$/№ <block begin> <variable as input>№$^{*}$/№
+<block exit>    №$\rightarrow$/№ pass_control
+                   <block name and variables to pass>
+<block part>    №$\rightarrow$/№ <variable definition> 
+                    | <instruction>
+                    | <conditional exit>
+<conditional exit> №$\rightarrow$/№ condition_pass <condition>
+                     <block name and variables to pass>
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Макет языка. Пример}
+    Возможно стоит ещё и сравнение с си, но боюсь не успею.
+    там нужно память сделать
+\end{frame}
+
+\begin{frame}
+    \frametitle{Макет языка. Пример}
+    Возможно стоит ещё и сравнение с си, но боюсь не успею.
+    там нужно память сделать
+\end{frame}
+
+\begin{frame}
+    \frametitle{Как это можно развить}
+    Добавить SMID регистры.
+
+    Нынешняя реализация не позволят использовать части регистра.
+    С векторными регистрами это необходимо.
+\end{frame}
+
+\begin{frame}
+    \frametitle{Заключение}
+    В этой работе был реализован алгоритм выделения регистров.
+    Был создан макет языка, который показывает работоспособность этого алгоритма.
 \end{frame}
 \bibliographystyle{apalike}
-\bibliography{}
+\bibliography{fclang_register_allocation}
 \end{document}
