@@ -20,11 +20,6 @@
 \maketitle
 
 \begin{frame}
-    \frametitle{Frame template}
-
-\end{frame}
-
-\begin{frame}
     \frametitle{Введение}
 
     FCLang -- язык между ассемблером и C \cite{____2023}.
@@ -230,16 +225,66 @@
 
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{Макет языка. Пример}
-    Возможно стоит ещё и сравнение с си, но боюсь не успею.
-    там нужно память сделать
+    \begin{lstlisting}[language=Python]
+hello = "Hello World!\n"
+
+main = Def()
+loop = Def()
+print = Def()
+finale = Def()
+with main:
+    number = Variable()
+    Mov(number, len(hello) - 1)
+    pass_control((loop , [number]))
+
+with loop:
+    number = Variable()
+    number.set_as_input()
+    Add(number, -1)
+    condition_pass(Flag.Zero, False, (print, [number]))
+    pass_control((finale, []))
+
+    \end{lstlisting}
+
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{Макет языка. Пример}
-    Возможно стоит ещё и сравнение с си, но боюсь не успею.
-    там нужно память сделать
+    \begin{lstlisting}[language=Python]
+with print:
+    number = Variable()
+    offset = Variable()
+    offset.set_as_input()
+    Mov(number, hello)
+    Add(number, offset)
+
+    write(1, number, byte_length(hello))
+    pass_control((loop, [offset]))
+
+with finale:
+    exit(0)
+    \end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Макет языка. Пример}
+    \begin{lstlisting}[language=Python]
+def syscall(syscall_id: Syscalls, *args):
+    Mov(RAX, syscall_id)
+    registers = [RDI, RSI, RDX, R10, R8, R9]
+    for i in range(len(args)):
+        if isinstance(args[i], Variable):
+            try:
+                Bind(args[i], registers[i])
+            except Exception:
+                Mov(registers[i], args[i])
+        else:
+            Mov(registers[i], args[i])
+    Syscall()
+\end{lstlisting}
 \end{frame}
 
 \begin{frame}
