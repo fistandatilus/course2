@@ -18,7 +18,7 @@
 
 \newtheorem{theorem}{Теорема}
 
-\lstset{label=Листинг, tabsize = 2, basicstyle=\ttfamily, captionpos=b, escapeinside={№}{/№}, frame=single}
+\lstset{label=Листинг, tabsize = 2, captionpos=b, escapeinside={№}{/№}, frame=single}
 
 \author{Борисенков Никита}
 
@@ -263,8 +263,50 @@ def write(descriptor: Value, buffer: Value, length: Value):
 
 При выделении регистров надо учитывать не только другие переменные, но и явные использования регистров, а така же то, что некоторые инструкции (например div) могут менять конкретные регистры.
 Все статьи, которые были рассмотрены при выполнении данной работы либо не упоминают это, либо в случае раскраски графов говорят, что это решается предраскрашиванием части вершин.
-В этой работе эта проблема была решена добавлением для каждой переменной списка регистров, которые используются в её время жизни.
+В этой работе это решается добавлением для каждой переменной списка регистров, которые используются в её время жизни.
 Для построения этого списка используется дополнительный проход по блоку.
+Псевдокод реализации представлен в листинге \ref{main_algorithm}, а в листинге \ref{interf_find} показано как ищется недопустимые регистры для переменных.
+
+\begin{lstlisting}[caption={Алгоритм, использованный в решении}, label=main_algorithm, float, language=Python, basicstyle=\fontsize{11}{13}]
+def allocate_registers(block):
+    find_interfering_registers(block)
+    active = []
+    for var in block.variables: #№по возрастанию начала/№
+        ExpireOldVars(var)
+        if length(active) == R:
+            Fail
+        if var.register is not None:
+            if var.register in var.unavailable_registers: Fail
+            else: continue
+        if №есть допустимый свободный регстр r для var/№:
+        var.register = r
+        free_registers.remove(r)
+        active.insert(var) #№по убыванию конца/№
+        for v in var.linked_vars:
+            v.register = r
+
+def ExpireOldVars(i):
+    for j in active: #№по возрастанию конца/№
+        if j.endpoint >= i.startpoint:
+            return
+        active.remove(j) 
+        free_registers.append(j.register)
+
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Поиск недопустимых регистров}, label=interf_find, float, language=Python]
+def find_interfering_registers(block):
+    active = []
+    for №инструкции i по порядку от первого использования/№
+            №какой-то переменной до последнего/№:
+        active.add(№все переменные с началом в i/№)
+        for reg in i.used_registers:
+            for var in active:
+                var.unavailable_registers.add(reg)
+        for var in active:
+            if var.last_use == i:
+                active.remove(var)
+\end{lstlisting}
 
 Обычный алгоритм линейного сканирования не справится только если в какой-то момент количество живых переменных больше числа регистров.
 Из-за дополнительных ограничений на допустимые регистры предложенный выше алгоритм может не справиться когда свободные регистры есть.
@@ -298,11 +340,11 @@ op(v2)
 Этот алгоритм реализован не был.
 
 \subsection{Реализация}
-Реализация была написана на языке Python.
+Реализация написана на языке Python.
 Блоки реализованы как блоки кода обёрнутые в \texttt{with} выражение.
 Инструкции реализованы как классы, представители которых имеют в себе список операндов,
 а сам класс содержит в себе название инструкции в языке ассемблера NASM, число операндов и список действий над ними.
-
+Пример реализации простой
 
 \section{Заключение}
 
